@@ -1,7 +1,6 @@
-const http = require("http");
 const fs = require("fs");
 
-const server = http.createServer((req, res) => {
+const requestHandler = (req, res) => {
   const url = req.url;
   const method = req.method;
   if (url === "/") {
@@ -31,6 +30,21 @@ const server = http.createServer((req, res) => {
   );
   res.end();
   //   process.exit();
-});
+};
 
-server.listen(3000);
+module.exports = requestHandler;
+
+// Could also do this...
+// module.exports = {
+//     handler: requestHandler;
+// }
+// Then pass routes.handler in app.js
+
+// Or this...
+// module.exports.handler = requestHandler;
+// Then also pass routes.handler in app.js
+
+// Or even shorter version...
+// A shortcut supplied by node.js
+// exports.handler = requestHandler;
+// Then also pass routes.handler in app.js
