@@ -31,6 +31,9 @@ module.exports = class Cart {
         cart.products = [...cart.products, updatedProduct];
       }
       cart.totalPrice = cart.totalPrice + productPrice;
+      // If the price was still stored as a string, you can add a + in front
+      //   of the productPrice variable to add it as an int
+      // ie => cart.totalPrice = cart.totalPrice + +productPrice;
       fs.writeFile(p, JSON.stringify(cart), err => {
         console.log(err);
       });
