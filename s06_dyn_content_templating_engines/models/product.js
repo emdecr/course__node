@@ -1,6 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 
+const Cart = require("./cart");
+
 const p = path.join(
   path.dirname(process.mainModule.filename),
   "data",
@@ -77,29 +79,13 @@ module.exports = class Product {
   }
 
   static deleteProduct(id) {
-    //   Fetch existing products
-    fs.readFile(p, (err, fileContent) => {
-      let products = [];
-      if (!err) {
-        products = JSON.parse(fileContent);
-      }
-      // Check if product exists
-      const existingProductIndex = products.findIndex(
-        product => product.id == id
-      );
-      const existingProduct = products[existingProductIndex];
-      // Delete product
-      let updatedProducts;
-      if (existingProduct) {
-        updatedProducts = [...products];
-        updatedProducts.splice(existingProductIndex, 1);
-        console.log("deleted");
-      } else {
-        updatedProducts = [...products];
-        console.log("no deletions");
-      }
+    getProductsFromFile(products => {
+      const product = products.find(product => product.id == id);
+      const updatedProducts = products.filter(product => product.id != id);
       fs.writeFile(p, JSON.stringify(updatedProducts), err => {
-        console.log("deleteProduct errors", err);
+        if (!err) {
+          Cart.deleteProduct(id, product.price);
+        }
       });
     });
   }

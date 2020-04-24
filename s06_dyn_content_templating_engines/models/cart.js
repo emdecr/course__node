@@ -8,7 +8,17 @@ const p = path.join(
 );
 
 module.exports = class Cart {
-  // static keyword makes sure you can call this method directly on the class and not an instantiated object
+  static getCart(callBack) {
+    fs.readFile(p, (err, fileContent) => {
+      const cart = JSON.parse(fileContent);
+      if (err) {
+        callBack(null);
+      } else {
+        callBack(cart);
+      }
+    });
+  }
+
   static addProduct(id, productPrice) {
     //   Fetch existing cart
     fs.readFile(p, (err, fileContent) => {
@@ -36,6 +46,31 @@ module.exports = class Cart {
       // ie => cart.totalPrice = cart.totalPrice + +productPrice;
       fs.writeFile(p, JSON.stringify(cart), err => {
         console.log(err);
+      });
+    });
+  }
+
+  static deleteProduct(id, price) {
+    fs.readFile(p, (err, fileContent) => {
+      let cart = { products: [], totalPrice: 0 };
+      if (!err) {
+        cart = JSON.parse(fileContent);
+      } else {
+        return;
+      }
+      const updatedCart = { ...cart };
+      const product = updatedCart.products.find(product => product.id == id);
+      if (!product) {
+        return;
+      }
+      const productQty = product.qty;
+      updatedCart.products = updatedCart.products.filter(
+        product => product.id != id
+      );
+      updatedCart.totalPrice = updatedCart.totalPrice - price * productQty;
+
+      fs.writeFile(p, JSON.stringify(updatedCart), err => {
+        console.log("deleteProduct errors", err);
       });
     });
   }
