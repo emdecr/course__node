@@ -31,7 +31,7 @@ module.exports = class Product {
       // Using an arrow fxn makes sure this refers to the class
       products.push(this);
       fs.writeFile(p, JSON.stringify(products), err => {
-        console.log(err);
+        console.log("getProductsFromFile errors", err);
       });
     });
   }
@@ -49,7 +49,7 @@ module.exports = class Product {
   }
 
   static editProduct(id, updatedProductInfo) {
-    //   Fetch existing cart
+    //   Fetch existing products
     fs.readFile(p, (err, fileContent) => {
       let products = [];
       if (!err) {
@@ -71,7 +71,35 @@ module.exports = class Product {
         console.log("no changes");
       }
       fs.writeFile(p, JSON.stringify(updatedProducts), err => {
-        console.log(err);
+        console.log("editProduct errors", err);
+      });
+    });
+  }
+
+  static deleteProduct(id) {
+    //   Fetch existing products
+    fs.readFile(p, (err, fileContent) => {
+      let products = [];
+      if (!err) {
+        products = JSON.parse(fileContent);
+      }
+      // Check if product exists
+      const existingProductIndex = products.findIndex(
+        product => product.id == id
+      );
+      const existingProduct = products[existingProductIndex];
+      // Delete product
+      let updatedProducts;
+      if (existingProduct) {
+        updatedProducts = [...products];
+        updatedProducts.splice(existingProductIndex, 1);
+        console.log("deleted");
+      } else {
+        updatedProducts = [...products];
+        console.log("no deletions");
+      }
+      fs.writeFile(p, JSON.stringify(updatedProducts), err => {
+        console.log("deleteProduct errors", err);
       });
     });
   }
