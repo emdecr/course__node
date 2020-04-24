@@ -18,10 +18,11 @@ const getProductsFromFile = callBack => {
 };
 
 module.exports = class Product {
-  constructor(title, imageURL, price, description) {
+  constructor(id, title, imageURL, price, description) {
+    this.id = id;
     this.title = title;
     this.imageURL = imageURL;
-    this.price = price;
+    this.price = parseInt(price);
     this.description = description;
   }
 
@@ -38,5 +39,12 @@ module.exports = class Product {
   // static keyword makes sure you can call this moethod directly on the class and not an instantiated object
   static fetchAll(callBack) {
     getProductsFromFile(callBack);
+  }
+
+  static findProductById(id, callBack) {
+    getProductsFromFile(products => {
+      const product = products.find(p => p.id == id);
+      callBack(product);
+    });
   }
 };
