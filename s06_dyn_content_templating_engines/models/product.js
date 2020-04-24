@@ -47,4 +47,32 @@ module.exports = class Product {
       callBack(product);
     });
   }
+
+  static editProduct(id, updatedProductInfo) {
+    //   Fetch existing cart
+    fs.readFile(p, (err, fileContent) => {
+      let products = [];
+      if (!err) {
+        products = JSON.parse(fileContent);
+      }
+      // Check if product exists
+      const existingProductIndex = products.findIndex(
+        product => product.id == id
+      );
+      const existingProduct = products[existingProductIndex];
+      //   Add new product/increase quantity
+      let updatedProducts;
+      if (existingProduct) {
+        updatedProducts = [...products];
+        updatedProducts[existingProductIndex] = updatedProductInfo;
+        console.log("changes");
+      } else {
+        updatedProducts = [...products];
+        console.log("no changes");
+      }
+      fs.writeFile(p, JSON.stringify(updatedProducts), err => {
+        console.log(err);
+      });
+    });
+  }
 };
