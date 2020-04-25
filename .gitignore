@@ -1,3 +1,4 @@
 .DS_Store
 message.txt
 node_modules
+database.js
