@@ -1,23 +1,5 @@
-const fs = require("fs");
-const path = require("path");
-
+const db = require("../util/database");
 const Cart = require("./cart");
-
-const p = path.join(
-  path.dirname(process.mainModule.filename),
-  "data",
-  "products.json"
-);
-
-const getProductsFromFile = callBack => {
-  fs.readFile(p, (err, fileContent) => {
-    if (err) {
-      callBack([]);
-    } else {
-      callBack(JSON.parse(fileContent));
-    }
-  });
-};
 
 module.exports = class Product {
   constructor(id, title, imageURL, price, description) {
@@ -29,64 +11,22 @@ module.exports = class Product {
   }
 
   save() {
-    getProductsFromFile(products => {
-      // Using an arrow fxn makes sure this refers to the class
-      products.push(this);
-      fs.writeFile(p, JSON.stringify(products), err => {
-        console.log("getProductsFromFile errors", err);
-      });
-    });
+    return db.execute(
+      "INSERT INTO products (title, price, imageURL, description ) VALUES (?,?,?,?)",
+      [this.title, this.price, this.imageURL, this.description]
+    );
   }
 
   // static keyword makes sure you can call this moethod directly on the class and not an instantiated object
-  static fetchAll(callBack) {
-    getProductsFromFile(callBack);
+  static fetchAll() {
+    return db.execute("SELECT * FROM products");
   }
 
-  static findProductById(id, callBack) {
-    getProductsFromFile(products => {
-      const product = products.find(p => p.id == id);
-      callBack(product);
-    });
+  static findProductById(id) {
+    return db.execute("SELECT * FROM products WHERE products.id = ?", [id]);
   }
 
-  static editProduct(id, updatedProductInfo) {
-    //   Fetch existing products
-    fs.readFile(p, (err, fileContent) => {
-      let products = [];
-      if (!err) {
-        products = JSON.parse(fileContent);
-      }
-      // Check if product exists
-      const existingProductIndex = products.findIndex(
-        product => product.id == id
-      );
-      const existingProduct = products[existingProductIndex];
-      //   Add new product/increase quantity
-      let updatedProducts;
-      if (existingProduct) {
-        updatedProducts = [...products];
-        updatedProducts[existingProductIndex] = updatedProductInfo;
-        console.log("changes");
-      } else {
-        updatedProducts = [...products];
-        console.log("no changes");
-      }
-      fs.writeFile(p, JSON.stringify(updatedProducts), err => {
-        console.log("editProduct errors", err);
-      });
-    });
-  }
+  static editProduct(id, updatedProductInfo) {}
 
-  static deleteProduct(id) {
-    getProductsFromFile(products => {
-      const product = products.find(product => product.id == id);
-      const updatedProducts = products.filter(product => product.id != id);
-      fs.writeFile(p, JSON.stringify(updatedProducts), err => {
-        if (!err) {
-          Cart.deleteProduct(id, product.price);
-        }
-      });
-    });
-  }
+  static deleteProduct(id) {}
 };

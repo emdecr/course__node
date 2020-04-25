@@ -15,8 +15,14 @@ exports.postAddProduct = (req, res, next) => {
   const description = req.body.description;
   const id = Math.floor(Math.random() * (1000000000000000 - 1 + 1) + 1);
   const product = new Product(id, title, imageURL, price, description);
-  product.save();
-  res.redirect("/");
+  product
+    .save()
+    .then(() => {
+      res.redirect("/");
+    })
+    .catch(err => {
+      console.log(err);
+    });
 };
 
 exports.getEditProduct = (req, res, next) => {
