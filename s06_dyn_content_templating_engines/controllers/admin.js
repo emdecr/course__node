@@ -13,12 +13,18 @@ exports.postAddProduct = (req, res, next) => {
   const imageURL = req.body.imageURL;
   const price = req.body.price;
   const description = req.body.description;
-  const id = Math.floor(Math.random() * (1000000000000000 - 1 + 1) + 1);
-  const product = new Product(id, title, imageURL, price, description);
-  product
-    .save()
-    .then(() => {
-      res.redirect("/");
+  // because in app.js we defined a hasMany relation for users and products
+  // new mothds become available to the instance of user
+  req.user
+    .createProduct({
+      title: title,
+      price: price,
+      imageURL: imageURL,
+      description: description
+    })
+    .then(result => {
+      console.log("Created product");
+      res.redirect("/admin/products");
     })
     .catch(err => {
       console.log(err);
@@ -31,48 +37,70 @@ exports.getEditProduct = (req, res, next) => {
     return res.redirect("/");
   }
   const prodId = req.params.productId;
-  Product.findProductById(prodId, product => {
-    if (!product) {
-      return res.redirect("/");
-    }
-    res.render("admin/edit-product", {
-      pageTitle: "Edit Product",
-      path: "/admin/edit-product",
-      editing: true,
-      product: product
+  Product.findByPk(prodId)
+    .then(product => {
+      if (!product) {
+        return res.redirect("/");
+      }
+      res.render("admin/edit-product", {
+        pageTitle: "Edit Product",
+        path: "/admin/edit-product",
+        editing: true,
+        product: product
+      });
+    })
+    .catch(err => {
+      console.log(err);
     });
-  });
 };
 
 exports.postEditProduct = (req, res, next) => {
   const title = req.body.title;
   const imageURL = req.body.imageURL;
-  const price = parseInt(req.body.price);
+  const price = req.body.price;
   const description = req.body.description;
   const id = parseInt(req.body.productId);
-  const productObj = {
-    id: id,
-    title: title,
-    imageURL: imageURL,
-    price: price,
-    description: description
-  };
-  Product.editProduct(id, productObj);
-  res.redirect("/admin/products");
+  Product.findByPk(id)
+    .then(product => {
+      product.title = title;
+      product.imageURL = imageURL;
+      product.price = price;
+      product.description = description;
+      return product.save();
+    })
+    .then(result => {
+      console.log("updaated product: " + id);
+      res.redirect("/admin/products");
+    })
+    .catch(err => {
+      console.log(err);
+    });
 };
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.deleteProduct(prodId);
-  res.redirect("/admin/products");
+  Product.findByPk(prodId)
+    .then(product => {
+      product.destroy();
+    })
+    .then(result => {
+      res.redirect("/admin/products");
+    })
+    .catch(err => {
+      console.log(err);
+    });
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.fetchAll(products => {
-    res.render("admin/products", {
-      prods: products,
-      pageTitle: "Admin Products",
-      path: "/admin/products"
+  Product.findAll()
+    .then(products => {
+      res.render("admin/products", {
+        prods: products,
+        pageTitle: "Admin Products",
+        path: "/admin/products"
+      });
+    })
+    .catch(err => {
+      console.log(err);
     });
-  });
 };
