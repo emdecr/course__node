@@ -13,15 +13,16 @@ exports.postAddProduct = (req, res, next) => {
   const imageURL = req.body.imageURL;
   const price = req.body.price;
   const description = req.body.description;
-  // because in app.js we defined a hasMany relation for users and products
-  // new mothds become available to the instance of user
-  req.user
-    .createProduct({
-      title: title,
-      price: price,
-      imageURL: imageURL,
-      description: description
-    })
+  const product = new Product(
+    title,
+    price,
+    imageURL,
+    description,
+    null,
+    req.user._id
+  );
+  product
+    .save()
     .then(result => {
       console.log("Created product");
       res.redirect("/admin/products");
@@ -37,11 +38,8 @@ exports.getEditProduct = (req, res, next) => {
     return res.redirect("/");
   }
   const prodId = req.params.productId;
-  req.user
-    .getProducts({ where: { id: prodId } })
-    // Product.findByPk(prodId)
-    .then(products => {
-      const product = products[0];
+  Product.findById(prodId)
+    .then(product => {
       if (!product) {
         return res.redirect("/");
       }
@@ -62,15 +60,18 @@ exports.postEditProduct = (req, res, next) => {
   const imageURL = req.body.imageURL;
   const price = req.body.price;
   const description = req.body.description;
-  const id = parseInt(req.body.productId);
-  Product.findByPk(id)
-    .then(product => {
-      product.title = title;
-      product.imageURL = imageURL;
-      product.price = price;
-      product.description = description;
-      return product.save();
-    })
+  const id = req.body.productId;
+
+  const product = new Product(
+    title,
+    price,
+    imageURL,
+    description,
+    id,
+    req.user._id
+  );
+  product
+    .save()
     .then(result => {
       console.log("updaated product: " + id);
       res.redirect("/admin/products");
@@ -82,11 +83,8 @@ exports.postEditProduct = (req, res, next) => {
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.findByPk(prodId)
-    .then(product => {
-      product.destroy();
-    })
-    .then(result => {
+  Product.deleteById(prodId)
+    .then(() => {
       res.redirect("/admin/products");
     })
     .catch(err => {
@@ -95,8 +93,7 @@ exports.postDeleteProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
-  req.user
-    .getProducts()
+  Product.fetchAll()
     .then(products => {
       res.render("admin/products", {
         prods: products,

@@ -1,26 +1,77 @@
-const Sequelize = require("sequelize");
-const sequelize = require("../util/database");
+const mongoConnect = require("../util/database").mongoConnect;
+const getDB = require("../util/database").getDB;
+const mongoDB = require("mongodb");
 
-const Product = sequelize.define("product", {
-  id: {
-    type: Sequelize.INTEGER,
-    autoIncrement: true,
-    allowNull: false,
-    primaryKey: true
-  },
-  title: Sequelize.STRING,
-  price: {
-    type: Sequelize.DOUBLE,
-    allowNull: false
-  },
-  imageURL: {
-    type: Sequelize.STRING,
-    allowNull: false
-  },
-  description: {
-    type: Sequelize.STRING,
-    allowNull: false
+class Product {
+  constructor(title, price, imageURL, description, id, userId) {
+    this.title = title;
+    this.price = price;
+    this.imageURL = imageURL;
+    this.description = description;
+    this._id = id ? new mongoDB.ObjectId(id) : null;
+    this.userId = userId;
   }
-});
+
+  save() {
+    const db = getDB();
+    let dbOps;
+    if (this._id) {
+      dbOps = db
+        .collection("products")
+        .updateOne({ _id: this._id }, { $set: this });
+    } else {
+      dbOps = db.collection("products").insertOne(this);
+    }
+    return dbOps
+      .then(result => {
+        console.log(result);
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  }
+
+  static fetchAll() {
+    const db = getDB();
+    return db
+      .collection("products")
+      .find() // find() returns a cursor
+      .toArray()
+      .then(products => {
+        // console.log(products);
+        return products;
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  }
+
+  static findById(prodId) {
+    const db = getDB();
+    return db
+      .collection("products")
+      .find({ _id: new mongoDB.ObjectId(prodId) })
+      .next()
+      .then(product => {
+        return product;
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  }
+
+  static deleteById(prodId) {
+    const db = getDB();
+    return db
+      .collection("products")
+      .deleteOne({ _id: new mongoDB.ObjectId(prodId) })
+      .then(result => {
+        console.log("DELETED!");
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  }
+}
 
 module.exports = Product;

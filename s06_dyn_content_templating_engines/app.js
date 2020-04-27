@@ -5,13 +5,9 @@ const bodyParser = require("body-parser");
 const expressHbs = require("express-handlebars");
 
 const errorController = require("./controllers/error");
-const sequelize = require("./util/database");
-const Product = require("./models/product");
+
+const mongoConnect = require("./util/database").mongoConnect;
 const User = require("./models/user");
-const Cart = require("./models/cart");
-const CartItem = require("./models/cart-item");
-const Order = require("./models/order");
-const OrderItem = require("./models/order-item");
 
 const app = express();
 
@@ -33,9 +29,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use((req, res, next) => {
-  User.findByPk(1)
+  User.findById("5ea717b223b4b764f1e89fc5")
     .then(user => {
-      req.user = user;
+      req.user = new User(user.name, user.email, user.cart, user._id);
       next();
     })
     .catch(err => {
@@ -48,35 +44,6 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-Product.belongsTo(User, { constraints: true, onDelete: "CASCADE" });
-// CASCADE => if user is deleted, so are their products they created
-User.hasMany(Product);
-User.hasOne(Cart);
-Cart.belongsTo(User);
-Cart.belongsToMany(Product, { through: CartItem });
-Product.belongsToMany(Cart, { through: CartItem });
-Order.belongsTo(User);
-User.hasMany(Order);
-Order.belongsToMany(Product, { through: OrderItem });
-
-sequelize
-  // .sync({ force: true })
-  .sync()
-  .then(() => {
-    return User.findByPk(1);
-  })
-  .then(user => {
-    if (!user) {
-      return User.create({ name: "Emily", email: "edc@test.com" });
-    }
-    return user;
-  })
-  .then(user => {
-    user.createCart();
-  })
-  .then(cart => {
-    app.listen(3000);
-  })
-  .catch(error => {
-    console.log(error);
-  });
+mongoConnect(() => {
+  app.listen(3000);
+});
