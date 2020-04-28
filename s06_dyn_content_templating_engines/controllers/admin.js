@@ -13,14 +13,13 @@ exports.postAddProduct = (req, res, next) => {
   const imageURL = req.body.imageURL;
   const price = req.body.price;
   const description = req.body.description;
-  const product = new Product(
-    title,
-    price,
-    imageURL,
-    description,
-    null,
-    req.user._id
-  );
+  const product = new Product({
+    title: title,
+    price: price,
+    imageURL: imageURL,
+    description: description,
+    userId: req.user //mongoose will automatically pick out the id from the user object
+  });
   product
     .save()
     .then(result => {
@@ -62,16 +61,14 @@ exports.postEditProduct = (req, res, next) => {
   const description = req.body.description;
   const id = req.body.productId;
 
-  const product = new Product(
-    title,
-    price,
-    imageURL,
-    description,
-    id,
-    req.user._id
-  );
-  product
-    .save()
+  Product.findById(id)
+    .then(product => {
+      product.title = title;
+      product.price = price;
+      product.imageURL = imageURL;
+      product.description = description;
+      return product.save();
+    })
     .then(result => {
       console.log("updaated product: " + id);
       res.redirect("/admin/products");
@@ -83,7 +80,7 @@ exports.postEditProduct = (req, res, next) => {
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.deleteById(prodId)
+  Product.findByIdAndRemove(prodId)
     .then(() => {
       res.redirect("/admin/products");
     })
@@ -93,7 +90,7 @@ exports.postDeleteProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.fetchAll()
+  Product.find()
     .then(products => {
       res.render("admin/products", {
         prods: products,
