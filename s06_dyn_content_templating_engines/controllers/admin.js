@@ -19,7 +19,7 @@ exports.postAddProduct = (req, res, next) => {
     price: price,
     imageURL: imageURL,
     description: description,
-    userId: req.session.user, //mongoose will automatically pick out the id from the user object
+    userId: req.user, //mongoose will automatically pick out the id from the user object
     isLoggedIn: req.session.isLoggedIn
   });
   product
