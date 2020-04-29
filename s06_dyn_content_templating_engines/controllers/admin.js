@@ -5,7 +5,7 @@ exports.getAddProduct = (req, res, next) => {
     pageTitle: "Add Product",
     path: "/admin/add-product",
     editing: false,
-    isLoggedIn: req.isLoggedIn
+    isLoggedIn: req.session.isLoggedIn
   });
 };
 
@@ -19,8 +19,8 @@ exports.postAddProduct = (req, res, next) => {
     price: price,
     imageURL: imageURL,
     description: description,
-    userId: req.user, //mongoose will automatically pick out the id from the user object
-    isLoggedIn: req.isLoggedIn
+    userId: req.session.user, //mongoose will automatically pick out the id from the user object
+    isLoggedIn: req.session.isLoggedIn
   });
   product
     .save()
@@ -49,7 +49,7 @@ exports.getEditProduct = (req, res, next) => {
         path: "/admin/edit-product",
         editing: true,
         product: product,
-        isLoggedIn: req.isLoggedIn
+        isLoggedIn: req.session.isLoggedIn
       });
     })
     .catch(err => {
@@ -99,7 +99,7 @@ exports.getProducts = (req, res, next) => {
         prods: products,
         pageTitle: "Admin Products",
         path: "/admin/products",
-        isLoggedIn: req.isLoggedIn
+        isLoggedIn: req.session.isLoggedIn
       });
     })
     .catch(err => {
