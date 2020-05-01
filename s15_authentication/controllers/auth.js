@@ -151,7 +151,7 @@ exports.postReset = (req, res, next) => {
           return res.redirect("/reset");
         }
         user.resetToken = token;
-        user.resetTokenExp = Date.now() + 3600000;
+        user.resetTokenExp = Date.now() + 900000; // 900 000 = 15 mins
         return user.save();
       })
       .then(result => {
