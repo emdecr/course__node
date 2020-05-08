@@ -3,3 +3,5 @@ message.txt
 node_modules
 database.js
 .env
+images
+invoices
