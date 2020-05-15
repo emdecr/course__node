@@ -9,6 +9,7 @@ const graphqlHttp = require("express-graphql");
 
 const graphqlSchema = require("./graphql/schema");
 const graphqlResolvers = require("./graphql/resolvers");
+const auth = require("./middleware/auth");
 
 const app = express();
 
@@ -46,15 +47,33 @@ app.use((req, res, next) => {
     "OPTIONS, GET, POST, PUT, PATCH, DELETE"
   );
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
   next();
 });
+
+app.use(auth);
 
 app.use(
   "/graphql",
   graphqlHttp({
     schema: graphqlSchema,
     rootValue: graphqlResolvers,
-    graphiql: true
+    graphiql: true,
+    customFormatErrorFn(err) {
+      if (!err.originalError) {
+        return err;
+      }
+      const data = err.originalError.data;
+      const message = err.message || "An error occured";
+      const code = err.originalError.code || 500;
+      return {
+        message: message,
+        status: code,
+        data: data
+      };
+    }
   })
 );
 
