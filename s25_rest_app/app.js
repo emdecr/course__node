@@ -1,6 +1,7 @@
 const path = require("path");
 
 require("dotenv").config();
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
@@ -8,7 +9,7 @@ const multer = require("multer");
 const graphqlHttp = require("express-graphql");
 
 const graphqlSchema = require("./graphql/schema");
-const graphqlResolvers = require("./graphql/resolvers");
+const graphqlResolver = require("./graphql/resolvers");
 const auth = require("./middleware/auth");
 
 const app = express();
@@ -34,7 +35,8 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-app.use(bodyParser.json());
+// app.use(bodyParser.urlencoded()); // x-www-form-urlencoded <form>
+app.use(bodyParser.json()); // application/json
 app.use(
   multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
 );
@@ -59,20 +61,16 @@ app.use(
   "/graphql",
   graphqlHttp({
     schema: graphqlSchema,
-    rootValue: graphqlResolvers,
+    rootValue: graphqlResolver,
     graphiql: true,
-    customFormatErrorFn(err) {
+    formatError(err) {
       if (!err.originalError) {
         return err;
       }
       const data = err.originalError.data;
-      const message = err.message || "An error occured";
+      const message = err.message || "An error occurred.";
       const code = err.originalError.code || 500;
-      return {
-        message: message,
-        status: code,
-        data: data
-      };
+      return { message: message, status: code, data: data };
     }
   })
 );
@@ -82,17 +80,12 @@ app.use((error, req, res, next) => {
   const status = error.statusCode || 500;
   const message = error.message;
   const data = error.data;
-  res.status(status).json({
-    message: message,
-    data: data
-  });
+  res.status(status).json({ message: message, data: data });
 });
 
 mongoose
   .connect(process.env.MG_DB)
   .then(result => {
-    app.listen("8080");
+    app.listen(8080);
   })
-  .catch(err => {
-    console.log(err);
-  });
+  .catch(err => console.log(err));

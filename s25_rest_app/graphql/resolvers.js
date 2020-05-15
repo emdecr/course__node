@@ -7,55 +7,47 @@ const Post = require("../models/post");
 
 module.exports = {
   createUser: async function({ userInput }, req) {
-    // const email = args.userInput.email;
-    const email = userInput.email;
-    const name = userInput.name;
-    const password = userInput.password;
+    //   const email = args.userInput.email;
     const errors = [];
-    if (!validator.isEmail(email)) {
-      errors.push({ message: "Email is invalid" });
+    if (!validator.isEmail(userInput.email)) {
+      errors.push({ message: "E-Mail is invalid." });
     }
     if (
-      validator.isEmpty(password) ||
-      !validator.isLength(password, { min: 5 })
+      validator.isEmpty(userInput.password) ||
+      !validator.isLength(userInput.password, { min: 5 })
     ) {
-      errors.push({
-        message: "Must enter password that is more than 5 characters long."
-      });
+      errors.push({ message: "Password too short!" });
     }
     if (errors.length > 0) {
-      const error = new Error("Validation failed");
+      const error = new Error("Invalid input.");
       error.data = errors;
       error.code = 422;
       throw error;
     }
-    const existingUser = await User.findOne({ email: email });
+    const existingUser = await User.findOne({ email: userInput.email });
     if (existingUser) {
-      const error = new Error("User exists.");
-      error.code = 409;
+      const error = new Error("User exists already!");
       throw error;
     }
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPw = await bcrypt.hash(userInput.password, 12);
     const user = new User({
-      email: email,
-      name: name,
-      password: hashedPassword
+      email: userInput.email,
+      name: userInput.name,
+      password: hashedPw
     });
     const createdUser = await user.save();
-    // NTS: We do this because graphql won't understand the format that mongoose returns
-    // So we must convert them to strings, as that's what the gql schema expects
     return { ...createdUser._doc, _id: createdUser._id.toString() };
   },
   login: async function({ email, password }) {
     const user = await User.findOne({ email: email });
     if (!user) {
-      const error = new Error("User not found!");
+      const error = new Error("User not found.");
       error.code = 401;
       throw error;
     }
     const isEqual = await bcrypt.compare(password, user.password);
     if (!isEqual) {
-      const error = new Error("Invalid password");
+      const error = new Error("Password is incorrect.");
       error.code = 401;
       throw error;
     }
@@ -67,44 +59,43 @@ module.exports = {
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
-    console.log(token, user._id.toString());
     return { token: token, userId: user._id.toString() };
   },
   createPost: async function({ postInput }, req) {
     if (!req.isAuth) {
-      const error = new Error("User is not authenticated");
+      const error = new Error("Not authenticated!");
       error.code = 401;
       throw error;
     }
-    const title = postInput.title;
-    const content = postInput.content;
-    const imageUrl = postInput.imageUrl;
     const errors = [];
-    if (validator.isEmpty(title) || !validator.isLength(title, { min: 5 })) {
-      error.push({ message: "Title is invalid" });
+    if (
+      validator.isEmpty(postInput.title) ||
+      !validator.isLength(postInput.title, { min: 5 })
+    ) {
+      errors.push({ message: "Title is invalid." });
     }
     if (
-      validator.isEmpty(content) ||
-      !validator.isLength(content, { min: 5 })
+      validator.isEmpty(postInput.content) ||
+      !validator.isLength(postInput.content, { min: 5 })
     ) {
-      error.push({ message: "Content is invalid" });
+      errors.push({ message: "Content is invalid." });
     }
     if (errors.length > 0) {
-      const error = new Error("Validation failed");
+      const error = new Error("Invalid input.");
       error.data = errors;
       error.code = 422;
       throw error;
     }
     const user = await User.findById(req.userId);
     if (!user) {
-      const error = new Error("User not found!");
+      const error = new Error("Invalid user.");
       error.code = 401;
       throw error;
     }
     const post = new Post({
-      title: title,
-      content: content,
-      imageUrl: imageUrl,
+      title: postInput.title,
+      content: postInput.content,
+      imageUrl: postInput.imageUrl,
       creator: user
     });
     const createdPost = await post.save();
@@ -117,15 +108,21 @@ module.exports = {
       updatedAt: createdPost.updatedAt.toISOString()
     };
   },
-  posts: async function(args, req) {
+  posts: async function({ page }, req) {
     if (!req.isAuth) {
-      const error = new Error("User is not authenticated");
+      const error = new Error("Not authenticated!");
       error.code = 401;
       throw error;
     }
-    const totalPosts = await Post.find().countDocuments;
+    if (!page) {
+      page = 1;
+    }
+    const perPage = 2;
+    const totalPosts = await Post.find().countDocuments();
     const posts = await Post.find()
       .sort({ createdAt: -1 })
+      .skip((page - 1) * perPage)
+      .limit(perPage)
       .populate("creator");
     return {
       posts: posts.map(p => {
